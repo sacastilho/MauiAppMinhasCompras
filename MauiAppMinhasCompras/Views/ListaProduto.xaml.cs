@@ -5,7 +5,11 @@ namespace MauiAppMinhasCompras.Views;
 
 public partial class ListaProduto : ContentPage
 {
-	ObservableCollection<Produto> lista = new ObservableCollection<Produto>();
+    // coleção com todos os produtos, fornecido pela IA nas pesquisas
+    private List<Produto> allProdutos = new(); 
+    
+    // coleção filtrada (ligada ao Listview), adaptado pela IA nas pesquisas
+    private ObservableCollection<Produto> lista = new ObservableCollection<Produto>();
 	public ListaProduto()
 	{
 		InitializeComponent();
@@ -15,10 +19,23 @@ public partial class ListaProduto : ContentPage
 
 	protected async override void OnAppearing()
 	{
-		List<Produto> tmp = await App.Db.GetAll();
+        base.OnAppearing();
 
-		tmp.ForEach( i => lista.Add(i));
-	}
+        // alteração sugerida pela IA para guardar todos em allProdutos
+        allProdutos = await App.Db.GetAll();
+
+        // sugerido pela IA para preencher a ObservableCollection com todos
+        AtualizarLista(allProdutos);
+
+    }
+
+    // novo método sugerido pela IA para auxiliar a atualização da ObservableCollection
+    private void AtualizarLista (IEnumerable<Produto> produto)
+    {
+        lista.Clear();
+        foreach (var p in produto)
+            lista.Add(p);
+    }
 
     private void ToolbarItem_Clicked(object sender, EventArgs e)
     {
@@ -33,13 +50,16 @@ public partial class ListaProduto : ContentPage
     }
     private async void txt_search_TextChanged(object sender, TextChangedEventArgs e)
     {
-        string q = e.NewTextValue;
+        // alteração sugerida pela IA para filtra a lista em memória
+        string q = e.NewTextValue?.ToLower() ?? "";
 
-        lista.Clear();
+        var filtrados = allProdutos
+            .Where(p => p.Descricao.ToLower().Contains(q)
+                     || p.Preco.ToString().Contains(q)
+                     || p.Quantidade.ToString().Contains(q));
 
-        List<Produto> tmp = await App.Db.Search(q);
 
-        tmp.ForEach(i => lista.Add(i));
+        AtualizarLista(filtrados);
     }
 
     
@@ -57,6 +77,8 @@ public partial class ListaProduto : ContentPage
             {
                 await App.Db.Delete(produto.Id);
 
+                // sugerido pela IA para remover também da lista completa
+                allProdutos.Remove(produto);
                 lista.Remove(produto);
             }
         }
