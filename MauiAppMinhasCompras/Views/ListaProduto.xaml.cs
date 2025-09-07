@@ -20,12 +20,20 @@ public partial class ListaProduto : ContentPage
 	protected async override void OnAppearing()
 	{
         base.OnAppearing();
+        try
+        {
+            // alteração sugerida pela IA para guardar todos em allProdutos
+            allProdutos = await App.Db.GetAll();
 
-        // alteração sugerida pela IA para guardar todos em allProdutos
-        allProdutos = await App.Db.GetAll();
+            // sugerido pela IA para preencher a ObservableCollection com todos
+            AtualizarLista(allProdutos);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
 
-        // sugerido pela IA para preencher a ObservableCollection com todos
-        AtualizarLista(allProdutos);
+
 
     }
 
@@ -48,18 +56,26 @@ public partial class ListaProduto : ContentPage
 			DisplayAlert("Ops", ex.Message, "OK");
 		}
     }
-    private async void txt_search_TextChanged(object sender, TextChangedEventArgs e)
+    private void txt_search_TextChanged(object sender, TextChangedEventArgs e)
     {
-        // alteração sugerida pela IA para filtra a lista em memória
-        string q = e.NewTextValue?.ToLower() ?? "";
+        try
+        {
+            // alteração sugerida pela IA para filtra a lista em memória
+            string q = e.NewTextValue?.ToLower() ?? "";
 
-        var filtrados = allProdutos
-            .Where(p => p.Descricao.ToLower().Contains(q)
-                     || p.Preco.ToString().Contains(q)
-                     || p.Quantidade.ToString().Contains(q));
+            var filtrados = allProdutos
+                .Where(p => p.Descricao.ToLower().Contains(q)
+                         || p.Preco.ToString().Contains(q)
+                         || p.Quantidade.ToString().Contains(q));
 
 
-        AtualizarLista(filtrados);
+            AtualizarLista(filtrados);
+        } 
+        catch (Exception ex)
+        {
+            DisplayAlert("Ops", ex.Message, "OK");
+        }
+        
     }
 
     
@@ -75,11 +91,19 @@ public partial class ListaProduto : ContentPage
 
             if (confirma)
             {
-                await App.Db.Delete(produto.Id);
+                try
+                {
+                    await App.Db.Delete(produto.Id);
 
-                // sugerido pela IA para remover também da lista completa
-                allProdutos.Remove(produto);
-                lista.Remove(produto);
+                    // sugerido pela IA para remover também da lista completa
+                    allProdutos.Remove(produto);
+                    lista.Remove(produto);
+                }
+                catch (Exception ex)
+                {
+                    DisplayAlert("Ops", ex.Message, "OK");
+
+                }
             }
         }
     }
@@ -91,5 +115,25 @@ public partial class ListaProduto : ContentPage
         string msg = $"O total é {soma:C}";
 
         DisplayAlert("Total dos Produtos", msg, "OK");
+    }
+
+    private void lst_produtos_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+    {
+        try
+        {
+            Produto p = e.SelectedItem as Produto;
+
+            Navigation.PushAsync(new Views.EditarProduto
+            {
+                BindingContext = p,
+            });
+
+        }
+        catch (Exception ex)
+        {
+            DisplayAlert("Ops", ex.Message, "OK");
+
+        }
+
     }
 }
